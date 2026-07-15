@@ -1,9 +1,9 @@
 const cacheName = "Euphoria XR-Ahmed Malik-0.1";
 const contentToCache = [
-    "Build/Build_3.loader.js",
-    "Build/Build_3.framework.js",
-    "Build/Build_3.data",
-    "Build/Build_3.wasm",
+    "Build/Build.loader.js",
+    "Build/Build.framework.js",
+    "Build/Build.data",
+    "Build/Build.wasm",
     "TemplateData/style.css"
 
 ];
