@@ -154,20 +154,24 @@
         var spinner = document.getElementById("spinner");
         if(startBtn) startBtn.style.visibility = "hidden";
         if(spinner) spinner.style.visibility = "visible";
-        // Ask camera + motion WHILE still on the dark screen.
-        // iOS native popup sits on this screen — Unity must NOT load yet.
-        if(!window.camPermissionsGranted) {
-          await RequestWebcam();
-        }
+        // iOS: DeviceOrientation requestPermission MUST be called in the same
+        // tap turn. Awaiting getUserMedia first kills the user-gesture.
+        var motionPromise = window.wTracker.startAngles()
+          .then(() => {
+            window.motionPermissionsGranted = true;
+            console.log("Motion sensors started");
+          });
+        var camPromise = window.camPermissionsGranted
+          ? Promise.resolve()
+          : RequestWebcam();
+        await camPromise;
         if(!window.camPermissionsGranted) {
           if(startBtn) startBtn.style.visibility = "visible";
           if(spinner) spinner.style.visibility = "hidden";
           return;
         }
         try {
-          await window.wTracker.startAngles();
-          window.motionPermissionsGranted = true;
-          console.log("Motion sensors started");
+          await motionPromise;
         } catch (error) {
           console.error("Failed to start motion sensors - " + error);
           ShowError("Failed to start the experience. " + error);
