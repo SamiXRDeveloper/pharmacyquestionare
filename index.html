@@ -148,8 +148,33 @@
         }
         updateBannerVisibility();
       }
-      function StartAR() {
+      async function StartAR() {
         if(window.arStarted) return;
+        var startBtn = document.getElementById("startARButton");
+        var spinner = document.getElementById("spinner");
+        if(startBtn) startBtn.style.visibility = "hidden";
+        if(spinner) spinner.style.visibility = "visible";
+        // Ask camera + motion WHILE still on the dark screen.
+        // iOS native popup sits on this screen — Unity must NOT load yet.
+        if(!window.camPermissionsGranted) {
+          await RequestWebcam();
+        }
+        if(!window.camPermissionsGranted) {
+          if(startBtn) startBtn.style.visibility = "visible";
+          if(spinner) spinner.style.visibility = "hidden";
+          return;
+        }
+        try {
+          await window.wTracker.startAngles();
+          window.motionPermissionsGranted = true;
+          console.log("Motion sensors started");
+        } catch (error) {
+          console.error("Failed to start motion sensors - " + error);
+          ShowError("Failed to start the experience. " + error);
+          if(startBtn) startBtn.style.visibility = "visible";
+          if(spinner) spinner.style.visibility = "hidden";
+          return;
+        }
         window.arStarted = true;
         var startARDiv = document.querySelector("#startARDiv");
         startARDiv.style.opacity = 0;
@@ -182,6 +207,7 @@
           meta.content = 'width=device-width, height=device-height, initial-scale=1.0, user-scalable=no, shrink-to-fit=yes';
           document.getElementsByTagName('head')[0].appendChild(meta);
         }
+        // One loading UI — only after permissions are granted.
         loadingBar.style.display = "block";
         var script = document.createElement("script");
         script.src = loaderUrl;
@@ -190,19 +216,11 @@
             progressBarFull.style.width = 100 * progress + "%";
           }).then((unityInstance) => {
             loadingBar.style.display = "none";
-            
             window.unityInstance = unityInstance;
-            if(!window.camPermissionsGranted) {
-              RequestWebcam();
-            }
+            // Camera already granted above — no second permission prompt.
           }).catch((message) => {
             alert(message);
           });
-          // if(!window.motionPermissionsGranted){
-            StartMotionSensors();
-          // }
-            
-          //Call Start GPS here --> StartGPS();
         };
         document.body.appendChild(script);
       }
@@ -222,7 +240,8 @@
           try{
               window.webcamStream = await navigator.mediaDevices.getUserMedia(window.WEBCAM_SETTINGS);
               console.log("Webcam access granted");
-              requestingForPermissions = false;
+              window.camPermissionsGranted = true;
+              window.requestingForPermissions = false;
               // Immediately stop the stream to release the camera
               StopWebcam();
           }
@@ -230,6 +249,7 @@
               //user denied camera permission - show error panel
               console.error("getUserMedia error - " , err);
               ShowError("Failed to start the experience. Camera permission was denied");
+              window.camPermissionsGranted = false;
               window.requestingForPermissions = false;
           }           
       }
