@@ -1,4 +1,4 @@
-const cacheName = "Euphoria XR-Ahmed Malik-0.1";
+const cacheName = "OMPharma-URO-Vaxom-1";
 const contentToCache = [
     "Build/Build.loader.js",
     "Build/Build.framework.js",
