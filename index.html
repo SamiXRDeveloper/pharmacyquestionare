@@ -240,46 +240,56 @@
           audio: false
       };
       window.requestingForPermissions = false;
+      function HasLiveWebcamStream(){
+          return !!(window.webcamStream &&
+              window.webcamStream.getTracks &&
+              window.webcamStream.getTracks().some(t => t.readyState === "live"));
+      }
       async function RequestWebcam(){
           window.requestingForPermissions = true;
           try{
+              // Keep stream alive after grant. Stopping then re-calling getUserMedia
+              // during Unity load causes a second Android permission popup.
               window.webcamStream = await navigator.mediaDevices.getUserMedia(window.WEBCAM_SETTINGS);
               console.log("Webcam access granted");
               window.camPermissionsGranted = true;
-              window.requestingForPermissions = false;
-              // Immediately stop the stream to release the camera
-              StopWebcam();
           }
           catch (err) {
               //user denied camera permission - show error panel
               console.error("getUserMedia error - " , err);
               ShowError("Не удалось запустить опыт. Доступ к камере запрещён.");
               window.camPermissionsGranted = false;
+          }
+          finally {
               window.requestingForPermissions = false;
-          }           
+          }
       }
       function StopWebcam(){
           console.log("stopping camera");
-          window.webcamStream.getTracks().forEach(track => track.stop());    
+          if(!window.webcamStream) return;
+          window.webcamStream.getTracks().forEach(track => track.stop());
       }
       async function StartWebcam(){
           console.log("StartWebcam")
-          window.webcamStream = await navigator.mediaDevices.getUserMedia(window.WEBCAM_SETTINGS);
           while (window.requestingForPermissions) {
-              // Wait until requestingForPermissions becomes true.
               console.log("Waiting for permissions...");
-              await new Promise(resolve => setTimeout(resolve, 100)); // Adjust the delay time as needed.
+              await new Promise(resolve => setTimeout(resolve, 100));
+          }
+          // Reuse stream from ALLOW ACCESS — avoids second permission prompt on load.
+          if(!HasLiveWebcamStream()){
+              window.webcamStream = await navigator.mediaDevices.getUserMedia(window.WEBCAM_SETTINGS);
+          } else {
+              console.log("Reusing existing webcam stream");
           }
           console.log("Got Permissions");
           if(window.webcamStream)
           {
               const video = document.querySelector("#webcam-video");
-              video.srcObject = webcamStream;
+              video.srcObject = window.webcamStream;
               try {
                   await arCamera.startWebcam(video);
                   console.log("Webcam started successfully");
                   window.unityInstance.SendMessage('ARCamera', 'OnStartWebcamSuccess');
-                 
                   //replace background transparency
                   const canvas = document.querySelector("#unity-canvas");
                   let bgColor = window.getComputedStyle(canvas).backgroundColor;
