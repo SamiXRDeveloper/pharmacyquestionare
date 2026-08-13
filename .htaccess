@@ -1,0 +1,55 @@
+# Unity WebGL — put this file in the ROOT of your uploaded build
+# (same folder as index.html), e.g. builds/OMPharma/.htaccess
+#
+# Fixes:
+# 1) Content-Type for .wasm must be application/wasm
+# 2) Allows .wasm / .data if host blocks unknown extensions (403)
+
+Options +FollowSymLinks
+Options -MultiViews
+
+# ---- MIME types (required) ----
+AddType application/wasm .wasm
+AddType application/javascript .js
+AddType application/octet-stream .data
+AddType application/json .json
+AddType application/manifest+json .webmanifest
+AddType image/png .png
+AddType image/x-icon .ico
+AddType text/css .css
+AddType text/html .html
+
+# If Unity build uses Gzip compression (.gz files):
+# AddEncoding gzip .unityweb
+# <FilesMatch "\.(data|wasm|js|framework\.js)\.gz$">
+#   Header set Content-Encoding gzip
+#   Header set Content-Type application/octet-stream
+# </FilesMatch>
+# <FilesMatch "\.wasm\.gz$">
+#   Header set Content-Type application/wasm
+# </FilesMatch>
+
+# If Unity build uses Brotli compression (.br files):
+# AddEncoding br .unityweb
+# <FilesMatch "\.(data|wasm|js|framework\.js)\.br$">
+#   Header set Content-Encoding br
+# </FilesMatch>
+# <FilesMatch "\.wasm\.br$">
+#   Header set Content-Type application/wasm
+#   Header set Content-Encoding br
+# </FilesMatch>
+
+# ---- Allow WebGL binaries (fixes 403 on some hosts) ----
+<IfModule mod_authz_core.c>
+  <FilesMatch "\.(wasm|data|js|json|webmanifest|unityweb|br|gz)$">
+    Require all granted
+  </FilesMatch>
+</IfModule>
+
+# CORS helpers (needed if page and Build/ differ by subdomain)
+<IfModule mod_headers.c>
+  <FilesMatch "\.(wasm|data|js)$">
+    Header set Cross-Origin-Embedder-Policy "require-corp"
+    Header set Cross-Origin-Opener-Policy "same-origin"
+  </FilesMatch>
+</IfModule>

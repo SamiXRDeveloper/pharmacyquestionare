@@ -1,9 +1,9 @@
 const cacheName = "OMPharma-URO-Vaxom-1";
 const contentToCache = [
-    "Build/Build.loader.js",
-    "Build/Build.framework.js",
-    "Build/Build.data",
-    "Build/Build.wasm",
+    "Build/Build_New.loader.js",
+    "Build/Build_New.framework.js",
+    "Build/Build_New.data",
+    "Build/Build_New.wasm",
     "TemplateData/style.css"
 
 ];
